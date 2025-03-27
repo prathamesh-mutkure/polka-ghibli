@@ -2,6 +2,9 @@
 
 PolkaGhibli is a decentralized AI image generation platform where users can pay in **DOT or USDC** to generate **Ghibli-style AI portraits** using OpenAI's image model.  
 
+Contract Address- `0x43fA503Ef5F35c260f7ca464B71f59EB3E1a6268`
+
+
 ## 🚀 Features  
 - **AI Art Generation** – Users upload a photo or enter a text prompt to generate a Ghibli-style image.  
 - **Web3 Payments** – Pay per image in **DOT or USDC** via a Solidity smart contract on **AssetHub Westend**.  
