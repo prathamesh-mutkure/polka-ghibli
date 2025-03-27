@@ -15,6 +15,7 @@ dotenv.config();
 // Import routes and services
 import jobService from "./services/jobService";
 import apiRoutes from "./routes/api";
+import OpenAI from "openai";
 
 // Constants
 const PORT = process.env.PORT || 3001;
@@ -205,7 +206,7 @@ async function processImage(jobId: string) {
 }
 
 // Create Ghibli-style animation from image
-async function createGhibliAnimation(imagePath: string): Promise<string> {
+async function _createGhibliAnimation(imagePath: string): Promise<string> {
   try {
     // Read the image file
     const imageBuffer = fs.readFileSync(imagePath);
@@ -254,6 +255,64 @@ async function createGhibliAnimation(imagePath: string): Promise<string> {
     const animationUrl = `${process.env.API_BASE_URL}/processed/${fileName}`;
 
     return animationUrl;
+  } catch (error) {
+    console.error("Animation creation error:", error);
+    throw new Error(`Failed to create animation: ${error}`);
+  }
+}
+
+// In the processImage function or service
+async function createGhibliAnimation(imagePath: string): Promise<string> {
+  try {
+    // Create mask programmatically or use a pre-defined Ghibli-style mask
+    const maskPath = path.join(__dirname, "../assets/ghibli_mask.png");
+
+    // Initialize OpenAI client
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    const imageFile = fs.createReadStream(imagePath);
+
+    // Call the OpenAI API
+    // const response = await openai.images.edit({
+    //   model: "dall-e-2",
+    //   image: await fs.promises.readFile(imagePath),
+    //   mask: await fs.promises.readFile(maskPath),
+    //   prompt:
+    //     "Transform this image into a Studio Ghibli style animation with gentle wind effects, soft pastel colors, and detailed background elements in the style of Miyazaki",
+    //   n: 1,
+    //   size: "1024x1024",
+    // });
+
+    const response = await openai.images.edit({
+      model: "dall-e-2",
+      prompt:
+        "Transform this image into a Studio Ghibli style animation with gentle wind effects, soft pastel colors, and detailed background elements in the style of Miyazaki",
+      image: imageFile,
+    });
+
+    const animationUrl = response.data[0].url;
+
+    // Download the image to your server for storage
+    const processedDir = path.join(__dirname, "../processed");
+    if (!fs.existsSync(processedDir)) {
+      fs.mkdirSync(processedDir, { recursive: true });
+    }
+
+    const fileName = `ghibli_${Date.now()}.png`;
+    const processedPath = path.join(processedDir, fileName);
+
+    // Download the image from the URL
+    const imageResponse = await axios.get(animationUrl!, {
+      responseType: "arraybuffer",
+    });
+    await fs.promises.writeFile(processedPath, Buffer.from(imageResponse.data));
+
+    // Return the URL where the animation is stored
+    const savedImageUrl = `${process.env.API_BASE_URL}/processed/${fileName}`;
+
+    return savedImageUrl;
   } catch (error) {
     console.error("Animation creation error:", error);
     throw new Error(`Failed to create animation: ${error}`);
