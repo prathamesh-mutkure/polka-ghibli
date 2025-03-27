@@ -83,9 +83,3 @@ export default {
   getJobsByAddress,
   cleanupOldJobs,
 };
-
-// File: src/types/index.ts
-
-// File: src/config/index.ts
-
-// File: .env.example

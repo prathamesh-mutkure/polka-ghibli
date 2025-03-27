@@ -51,23 +51,24 @@ const upload = multer({
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB limit
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req, file, cb: multer.FileFilterCallback) => {
     // Accept images only
     if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-      return cb(new Error("Only image files are allowed!"), false);
+      cb(null, false); // Reject file without error
+      return;
     }
     cb(null, true);
   },
 });
 
 // Initialize Ethereum provider and contract
-let provider: ethers.providers.JsonRpcProvider;
+let provider: ethers.JsonRpcProvider;
 let wallet: ethers.Wallet;
 let contract: ethers.Contract;
 
 const initEthereum = async () => {
   try {
-    provider = new ethers.providers.JsonRpcProvider(PROVIDER_URL);
+    provider = new ethers.JsonRpcProvider(PROVIDER_URL);
     wallet = new ethers.Wallet(PRIVATE_KEY as string, provider);
     contract = new ethers.Contract(
       CONTRACT_ADDRESS as string,
@@ -91,14 +92,16 @@ app.use("/api", apiRoutes);
 app.post("/api/upload", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: "No image uploaded" });
+      res.status(400).json({ error: "No image uploaded" });
+      return;
     }
 
     const tokenId = req.body.tokenId;
     const address = req.body.address;
 
     if (!tokenId || !address) {
-      return res.status(400).json({ error: "Missing tokenId or address" });
+      res.status(400).json({ error: "Missing tokenId or address" });
+      return;
     }
 
     // Create job for processing
@@ -136,7 +139,8 @@ app.get("/api/job-status/:jobId", (req, res) => {
   const job = jobService.getJob(jobId);
 
   if (!job) {
-    return res.status(404).json({ error: "Job not found" });
+    res.status(404).json({ error: "Job not found" });
+    return;
   }
 
   res.json({
